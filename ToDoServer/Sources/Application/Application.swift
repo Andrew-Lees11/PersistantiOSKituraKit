@@ -33,6 +33,8 @@ public class Application {
     
     let router = Router()
     let cloudEnv = CloudEnv()
+    let todotable = ToDoTable()
+    let connection = PostgreSQLConnection(host: "localhost", port: 5432, options: [.databaseName("ToDoDatabase")])
     var todoStore = [ToDo]()
     var nextId :Int = 0
     
@@ -70,20 +72,85 @@ public class Application {
         Kitura.run()
     }
     
-    func createHandler(todo: ToDo, completion: (ToDo?, RequestError?) -> Void ) -> Void {
+    func createHandler(todo: ToDo, completion: @escaping (ToDo?, RequestError?) -> Void ) -> Void {
+        print("entered create handler")
         var todo = todo
         if todo.completed == nil {
             todo.completed = false
         }
-        let id = nextId
-        nextId += 1
-        todo.id = id
+        todo.id = getNextId()
+        guard let id = todo.id else {return}
         todo.url = "http://localhost:8080/\(id)"
+        connection.connect() { error in
+            print("create connected")
+            if error != nil {
+                print("connection error: \(String(describing: error))")
+                completion(nil, .internalServerError)
+                return
+            }
+            guard let title = todo.title, let user = todo.user, let order = todo.order, let completed = todo.completed, let url = todo.url else {
+                print("assigning todo error: \(todo)")
+                return
+            }
+            let insertQuery = Insert(into: todotable, values: [id, title, user, order, completed, url])
+            connection.execute(query: insertQuery) { result in
+                if !result.success {
+                    if let queryError = result.asError {
+                        // Something went wrong.
+                        print("insert query error: \(queryError)")
+                    }
+                    completion(nil, .internalServerError)
+                    return
+
+                }
+            }
+        }
         todoStore.append(todo)
         completion(todo, nil)
     }
     
-    func getAllHandler(completion: ([ToDo]?, RequestError?) -> Void ) -> Void {
+    func getAllHandler(completion: @escaping ([ToDo]?, RequestError?) -> Void ) -> Void {
+        var tempToDoStore = [ToDo]()
+        connection.connect() { error in
+            if error != nil {
+                print("connection error: \(String(describing: error))")
+                return
+            }
+            else {
+                let selectQuery = Select(from :todotable)
+                connection.execute(query: selectQuery) { queryResult in
+                    if let resultSet = queryResult.asResultSet {
+                        if !queryResult.success {
+                            if let queryError = queryResult.asError {
+                                // Something went wrong.
+                                print("select query error: \(queryError)")
+                            }
+                            completion(nil, .internalServerError)
+                            return
+                            
+                        }
+                        for row in resultSet.rows {
+                            print("inside rows")
+                            guard let id = row[0], let idInt = id as? Int else{return}
+                            guard let title = row[1], let titleString = title as? String else {return}
+                            guard let user = row[2], let userString = user as? String else {return}
+                            guard let order = row[3], let orderInt = order as? Int else {return}
+                            guard let completed = row[4], let completedBool = completed as? Bool else {return}
+                            guard let url = row[5], let urlString = url as? String else {return}
+                            print("assigned values")
+                           let currentToDo = ToDo(id: idInt, title: titleString, user: userString, order: orderInt, completed: completedBool, url: urlString)
+                            print("made todo: \(currentToDo)")
+                            tempToDoStore.append(currentToDo)
+                        }
+                    }
+                    else if let queryError = queryResult.asError {
+                        // Something went wrong.
+                        print("Something went wrong \(queryError)")
+                    }
+                }
+            }
+        }
+        self.todoStore = tempToDoStore
         completion(todoStore, nil)
     }
     
@@ -137,5 +204,33 @@ public class Application {
         completion(todoStore[idPosition], nil)
     }
     
+    private func getNextId() -> Int {
+        print("entered next id")
+        var nextId = 997
+        connection.connect() { error in
+            print("connected next id")
+            if error != nil {
+                print("get id connection error")
+                return
+            }
+            let maxIdQuery = Select(max(todotable.toDo_id) ,from: todotable)
+            connection.execute(query: maxIdQuery) { queryResult in
+                print("entered execute: \(queryResult)")
+                if let resultSet = queryResult.asResultSet {
+                    for row in resultSet.rows {
+                        guard let id = row[0] else{return}
+                        guard let id32 = id as? Int32 else{
+                            print("id failed = int32: \(id)")
+                            return
+                        }
+                        let idInt = Int(id32)
+                        nextId = idInt + 1
+                    }
+                }
+            }
+        }
+        print("finished next id: \(nextId)")
+    return nextId
+    }
 }
 
