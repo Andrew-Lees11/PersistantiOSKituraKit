@@ -22,6 +22,8 @@ import LoggerAPI
 import Configuration
 import CloudEnvironment
 import Health
+import SwiftKuery
+import SwiftKueryPostgreSQL
 
 public let projectPath = ConfigurationManager.BasePath.project.path
 public let health = Health()
