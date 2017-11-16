@@ -35,8 +35,6 @@ public class Application {
     let cloudEnv = CloudEnv()
     let todotable = ToDoTable()
     let connection = PostgreSQLConnection(host: "localhost", port: 5432, options: [.databaseName("ToDoDatabase")])
-    var todoStore = [ToDo]()
-    var nextId :Int = 0
     
     func postInit() throws{
         // Capabilities
@@ -56,7 +54,7 @@ public class Application {
         router.delete("/", handler: deleteAllHandler)
         router.delete("/", handler: deleteOneHandler)
         router.patch("/", handler: updateHandler)
-        router.put("/", handler: updatePutHandler)
+//        router.put("/", handler: updatePutHandler)
         
     }
     
@@ -73,7 +71,6 @@ public class Application {
     }
     
     func createHandler(todo: ToDo, completion: @escaping (ToDo?, RequestError?) -> Void ) -> Void {
-        print("entered create handler")
         var todo = todo
         if todo.completed == nil {
             todo.completed = false
@@ -82,7 +79,6 @@ public class Application {
         guard let id = todo.id else {return}
         todo.url = "http://localhost:8080/\(id)"
         connection.connect() { error in
-            print("create connected")
             if error != nil {
                 print("connection error: \(String(describing: error))")
                 completion(nil, .internalServerError)
@@ -105,12 +101,10 @@ public class Application {
                 }
             }
         }
-        todoStore.append(todo)
         completion(todo, nil)
     }
     
     func getAllHandler(completion: @escaping ([ToDo]?, RequestError?) -> Void ) -> Void {
-        print("entered getallhandler")
         var tempToDoStore = [ToDo]()
         connection.connect() { error in
             if error != nil {
@@ -118,10 +112,8 @@ public class Application {
                 return
             }
             else {
-                print("connected in get")
                 let selectQuery = Select(from :todotable)
                 connection.execute(query: selectQuery) { queryResult in
-                    print("executed query: \(queryResult)")
                     if let resultSet = queryResult.asResultSet {
                         for row in resultSet.rows {
                             guard let currentToDo = self.rowToDo(row: row) else{
@@ -129,7 +121,6 @@ public class Application {
                                 return
                             }
                             tempToDoStore.append(currentToDo)
-                            print("tempToDoStore: \(tempToDoStore)")
                         }
                     }
                     else if let queryError = queryResult.asError {
@@ -141,9 +132,7 @@ public class Application {
                 }
             }
         }
-        self.todoStore = tempToDoStore
-//        print("todoStore: \(self.todoStore)")
-        completion(todoStore, nil)
+        completion(tempToDoStore, nil)
     }
     
     func getOneHandler(id: Int, completion: @escaping (ToDo?, RequestError?) -> Void ) -> Void {
@@ -164,81 +153,165 @@ public class Application {
                             completion(nil, .notFound)
                             return
                         }
+                        completion(foundToDo,nil)
                     }
-                    completion(foundToDo,nil)
+                    else if let queryError = queryResult.asError {
+                        // Something went wrong.
+                        print("select query error: \(queryError)")
+                        completion(nil, .internalServerError)
+                        return
+                    }
                 }
             }
         }
     }
     
-    func deleteAllHandler(completion: (RequestError?) -> Void ) -> Void {
-        todoStore = [ToDo]()
+    func deleteAllHandler(completion: @escaping (RequestError?) -> Void ) -> Void {
+        connection.connect() { error in
+            if error != nil {
+                print("connection error: \(String(describing: error))")
+                return
+            }
+            else {
+                let deleteQuery = Delete(from :todotable)
+                connection.execute(query: deleteQuery) { queryResult in
+                    if queryResult.asError != nil {
+                        completion(.internalServerError)
+                        return
+                    }
+                }
+
+            }
+        }
         completion(nil)
     }
     
-    func deleteOneHandler(id: Int, completion: (RequestError?) -> Void ) -> Void {
-        guard let idMatch = todoStore.first(where: { $0.id == id }), let idPosition = todoStore.index(of: idMatch) else {
-            completion(.notFound)
-            return
+    func deleteOneHandler(id: Int, completion: @escaping (RequestError?) -> Void ) -> Void {
+        connection.connect() { error in
+            if error != nil {
+                print("connection error: \(String(describing: error))")
+                return
+            }
+            else {
+                let deleteQuery = Delete(from :todotable).where(todotable.toDo_id == id)
+                connection.execute(query: deleteQuery) { queryResult in
+                    if queryResult.asError != nil {
+                        completion(.internalServerError)
+                        return
+                    }
+                }
+                
+            }
         }
-        todoStore.remove(at: idPosition)
         completion(nil)
     }
     
-    func updateHandler(id: Int, new: ToDo, completion: (ToDo?, RequestError?) -> Void ) -> Void {
-        guard let idMatch = todoStore.first(where: { $0.id == id }), let idPosition = todoStore.index(of: idMatch) else {
-            completion(nil, .notFound)
-            return
+    func updateHandler(id: Int, new: ToDo, completion: @escaping (ToDo?, RequestError?) -> Void ) -> Void {
+        var current: ToDo?
+        connection.connect() { error in
+            if error != nil {
+                print("connection error: \(String(describing: error))")
+                return
+            }
+            else {
+                let selectQuery = Select(from :todotable).where(todotable.toDo_id == id)
+                connection.execute(query: selectQuery) { queryResult in
+                    if let resultSet = queryResult.asResultSet {
+                        for row in resultSet.rows {
+                            current = self.rowToDo(row: row)
+                            }
+                        }
+                    else if let queryError = queryResult.asError {
+                        // Something went wrong.
+                        print("select query error: \(queryError)")
+                        completion(nil, .internalServerError)
+                        return
+                    }
+                guard var current = current else {return}
+                current.title = new.title ?? current.title
+                guard let title = current.title else {return}
+                current.user = new.user ?? current.user
+                guard let user = current.user else {return}
+                current.order = new.order ?? current.order
+                guard let order = current.order else {return}
+                current.completed = new.completed ?? current.completed
+                guard let completed = current.completed else {return}
+                let updateQuery = Update(self.todotable, set: [(self.todotable.toDo_title, title),(self.todotable.toDo_user, user),(self.todotable.toDo_order, order),(self.todotable.toDo_completed, completed)]).where(self.todotable.toDo_id == id)
+                    self.connection.execute(query: updateQuery) { queryResult in
+                    if queryResult.asError != nil {
+                        completion(nil, .internalServerError)
+                        return
+                    }
+                    completion(current, nil)
+                }
+                }
+            }
         }
-        var current = todoStore[idPosition]
-        current.user = new.user ?? current.user
-        current.order = new.order ?? current.order
-        current.title = new.title ?? current.title
-        current.completed = new.completed ?? current.completed
-        todoStore[idPosition] = current
-        completion(todoStore[idPosition], nil)
     }
-    
-    func updatePutHandler(id: Int, new: ToDo, completion: (ToDo?, RequestError?) -> Void ) -> Void {
-        guard let idMatch = todoStore.first(where: { $0.id == id }), let idPosition = todoStore.index(of: idMatch) else {
-            completion(nil, .notFound)
-            return
+
+    func updatePutHandler(id: Int, new: ToDo, completion: @escaping (ToDo?, RequestError?) -> Void ) -> Void {
+        var current: ToDo?
+        connection.connect() { error in
+            if error != nil {
+                print("connection error: \(String(describing: error))")
+                return
+            }
+            else {
+                let selectQuery = Select(from :todotable).where(todotable.toDo_id == id)
+                connection.execute(query: selectQuery) { queryResult in
+                    if let resultSet = queryResult.asResultSet {
+                        for row in resultSet.rows {
+                            current = self.rowToDo(row: row)
+                        }
+                    }
+                    else if let queryError = queryResult.asError {
+                        // Something went wrong.
+                        print("select query error: \(queryError)")
+                        completion(nil, .internalServerError)
+                        return
+                    }
+                    guard var current = current else {return}
+                    current.title = new.title
+                    guard let title = current.title else {return}
+                    current.user = new.user
+                    guard let user = current.user else {return}
+                    current.order = new.order
+                    guard let order = current.order else {return}
+                    current.completed = new.completed
+                    guard let completed = current.completed else {return}
+                    let updateQuery = Update(self.todotable, set: [(self.todotable.toDo_title, title),(self.todotable.toDo_user, user),(self.todotable.toDo_order, order),(self.todotable.toDo_completed, completed)]).where(self.todotable.toDo_id == id)
+                    self.connection.execute(query: updateQuery) { queryResult in
+                        if queryResult.asError != nil {
+                            completion(nil, .internalServerError)
+                            return
+                        }
+                        completion(current, nil)
+                    }
+                }
+            }
         }
-        var current = todoStore[idPosition]
-        current.user = new.user
-        current.order = new.order
-        current.title = new.title
-        current.completed = new.completed
-        todoStore[idPosition] = current
-        completion(todoStore[idPosition], nil)
     }
+
     
     private func getNextId() -> Int {
-        print("entered next id")
         var nextId = 0
         connection.connect() { error in
-            print("connected next id")
             if error != nil {
                 print("get id connection error")
                 return
             }
             let maxIdQuery = Select(max(todotable.toDo_id) ,from: todotable)
             connection.execute(query: maxIdQuery) { queryResult in
-                print("entered execute: \(queryResult)")
                 if let resultSet = queryResult.asResultSet {
                     for row in resultSet.rows {
                         guard let id = row[0] else{return}
-                        guard let id32 = id as? Int32 else{
-                            print("id failed = int32: \(id)")
-                            return
-                        }
+                        guard let id32 = id as? Int32 else{return}
                         let idInt = Int(id32)
                         nextId = idInt + 1
                     }
                 }
             }
         }
-        print("finished next id: \(nextId)")
     return nextId
     }
     
