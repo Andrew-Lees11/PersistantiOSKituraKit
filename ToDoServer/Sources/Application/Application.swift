@@ -110,6 +110,7 @@ public class Application {
     }
     
     func getAllHandler(completion: @escaping ([ToDo]?, RequestError?) -> Void ) -> Void {
+        print("entered getallhandler")
         var tempToDoStore = [ToDo]()
         connection.connect() { error in
             if error != nil {
@@ -117,49 +118,57 @@ public class Application {
                 return
             }
             else {
+                print("connected in get")
                 let selectQuery = Select(from :todotable)
                 connection.execute(query: selectQuery) { queryResult in
+                    print("executed query: \(queryResult)")
                     if let resultSet = queryResult.asResultSet {
-                        if !queryResult.success {
-                            if let queryError = queryResult.asError {
-                                // Something went wrong.
-                                print("select query error: \(queryError)")
-                            }
-                            completion(nil, .internalServerError)
-                            return
-                            
-                        }
                         for row in resultSet.rows {
-                            print("inside rows")
-                            guard let id = row[0], let idInt = id as? Int else{return}
-                            guard let title = row[1], let titleString = title as? String else {return}
-                            guard let user = row[2], let userString = user as? String else {return}
-                            guard let order = row[3], let orderInt = order as? Int else {return}
-                            guard let completed = row[4], let completedBool = completed as? Bool else {return}
-                            guard let url = row[5], let urlString = url as? String else {return}
-                            print("assigned values")
-                           let currentToDo = ToDo(id: idInt, title: titleString, user: userString, order: orderInt, completed: completedBool, url: urlString)
-                            print("made todo: \(currentToDo)")
+                            guard let currentToDo = self.rowToDo(row: row) else{
+                                completion(nil, .internalServerError)
+                                return
+                            }
                             tempToDoStore.append(currentToDo)
+                            print("tempToDoStore: \(tempToDoStore)")
                         }
                     }
                     else if let queryError = queryResult.asError {
                         // Something went wrong.
-                        print("Something went wrong \(queryError)")
+                        print("select query error: \(queryError)")
+                        completion(nil, .internalServerError)
+                        return
                     }
                 }
             }
         }
         self.todoStore = tempToDoStore
+//        print("todoStore: \(self.todoStore)")
         completion(todoStore, nil)
     }
     
-    func getOneHandler(id: Int, completion: (ToDo?, RequestError?) -> Void ) -> Void {
-        guard let idMatch = todoStore.first(where: { $0.id == id }), let idPosition = todoStore.index(of: idMatch) else {
-            completion(nil, .notFound)
-            return
+    func getOneHandler(id: Int, completion: @escaping (ToDo?, RequestError?) -> Void ) -> Void {
+        connection.connect() { error in
+            if error != nil {
+                print("connection error: \(String(describing: error))")
+                return
+            }
+            else {
+                let selectQuery = Select(from :todotable).where(todotable.toDo_id == id)
+                connection.execute(query: selectQuery) { queryResult in
+                    var foundToDo: ToDo? = nil
+                    if let resultSet = queryResult.asResultSet {
+                        for row in resultSet.rows {
+                            foundToDo = self.rowToDo(row: row)
+                        }
+                        if foundToDo == nil {
+                            completion(nil, .notFound)
+                            return
+                        }
+                    }
+                    completion(foundToDo,nil)
+                }
+            }
         }
-        completion(todoStore[idPosition], nil)
     }
     
     func deleteAllHandler(completion: (RequestError?) -> Void ) -> Void {
@@ -206,7 +215,7 @@ public class Application {
     
     private func getNextId() -> Int {
         print("entered next id")
-        var nextId = 997
+        var nextId = 0
         connection.connect() { error in
             print("connected next id")
             if error != nil {
@@ -231,6 +240,18 @@ public class Application {
         }
         print("finished next id: \(nextId)")
     return nextId
+    }
+    
+    private func rowToDo(row: Array<Any?>) -> ToDo? {
+        guard let id = row[0], let id32 = id as? Int32 else{return nil}
+        let idInt = Int(id32)
+        guard let title = row[1], let titleString = title as? String else {return nil}
+        guard let user = row[2], let userString = user as? String else {return nil}
+        guard let order = row[3], let orderInt32 = order as? Int32 else {return nil}
+        let orderInt = Int(orderInt32)
+        guard let completed = row[4], let completedBool = completed as? Bool else {return nil}
+        guard let url = row[5], let urlString = url as? String else {return nil}
+        return ToDo(id: idInt, title: titleString, user: userString, order: orderInt, completed: completedBool, url: urlString)
     }
 }
 
