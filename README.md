@@ -62,4 +62,27 @@ A new Xcode window will open. For more info on the iOS app, [click here](https:/
 
 10. Press the Run button or ⌘+R. The project will build and the simulator will launch the application. Navigate your web browser to the address http://localhost:8080 to see an empty array. This is where ToDos made in the app are stored. As you add or delete elements in the app, this array will change.
 
+11. Start the postgreSQL database"
+
+    `brew install postgresql`
+    
+12. Create a database and open postgreSQL command line:
+
+    `createdb ToDoDatabase`
+    `psql ToDoDatabase`
+
+13. Create a ToDo item table:
+
+```
+CREATE TABLE toDoTable (
+    toDo_id integer primary key,
+    toDo_title varchar(50),
+    toDo_user varchar(50),
+    toDo_order integer,
+    toDo_completed boolean,
+    toDo_url varchar(50)
+);
+```
+
+
 *The Kitura component can be run on Linux or macOS. Xcode is not required for running the Kitura server component (Xcode is only required for the iOS component).
