@@ -73,7 +73,6 @@ public class Application {
     }
     
     func createHandler(todo: ToDo, completion: @escaping (ToDo?, RequestError?) -> Void ) -> Void {
-        print("entered create handler")
         var todo = todo
         if todo.completed == nil {
             todo.completed = false
@@ -91,7 +90,6 @@ public class Application {
                 print("assigning todo error: \(todo)")
                 return
             }
-            print("assigned todo: \(todo)")
             let insertQuery = Insert(into: todotable, values: [id, title, user, order, completed, url])
             connection.execute(query: insertQuery) { result in
                 if !result.success {
@@ -105,12 +103,10 @@ public class Application {
                 }
             }
         }
-        print("completed create")
         completion(todo, nil)
     }
     
     func getAllHandler(completion: @escaping ([ToDo]?, RequestError?) -> Void ) -> Void {
-        print("entered get all hander")
         var tempToDoStore = [ToDo]()
         connection.connect() { error in
             if error != nil {
@@ -118,17 +114,14 @@ public class Application {
                 return
             }
             else {
-                print("connected")
                 let selectQuery = Select(from :todotable)
                 connection.execute(query: selectQuery) { queryResult in
-                    print("executed query")
                     if let resultSet = queryResult.asResultSet {
                         for row in resultSet.rows {
                             guard let currentToDo = self.rowToDo(row: row) else{
                                 completion(nil, .internalServerError)
                                 return
                             }
-                            print("currentToDo: \(currentToDo)")
                             tempToDoStore.append(currentToDo)
                         }
                     }
@@ -141,7 +134,6 @@ public class Application {
                 }
             }
         }
-        print("completed getAll \(tempToDoStore)")
         completion(tempToDoStore, nil)
     }
     
@@ -326,7 +318,6 @@ public class Application {
     }
     
     private func rowToDo(row: Array<Any?>) -> ToDo? {
-        print("entered rowToDo")
         guard let id = row[0], let id32 = id as? Int32 else{return nil}
         let idInt = Int(id32)
         guard let title = row[1], let titleString = title as? String else {return nil}
@@ -344,7 +335,6 @@ public class Application {
             completedBool = completed
         }
         guard let url = row[5], let urlString = url as? String else {return nil}
-        print("finished rowToDo")
         return ToDo(id: idInt, title: titleString, user: userString, order: orderInt, completed: completedBool, url: urlString)
     }
 }
