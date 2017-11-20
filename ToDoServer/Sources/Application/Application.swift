@@ -23,7 +23,8 @@ import Configuration
 import CloudEnvironment
 import Health
 import SwiftKuery
-import SwiftKueryPostgreSQL
+//import SwiftKueryPostgreSQL
+import SwiftKueryMySQL
 
 public let projectPath = ConfigurationManager.BasePath.project.path
 public let health = Health()
@@ -34,7 +35,8 @@ public class Application {
     let router = Router()
     let cloudEnv = CloudEnv()
     let todotable = ToDoTable()
-    let connection = PostgreSQLConnection(host: "localhost", port: 5432, options: [.databaseName("ToDoDatabase")])
+//    let connection = PostgreSQLConnection(host: "localhost", port: 5432, options: [.databaseName("ToDoDatabase")])
+    let connection = MySQLConnection(user: "swift", password: "kuery", database: "ToDoDatabase", port: 3306)
     
     func postInit() throws{
         // Capabilities
@@ -54,7 +56,7 @@ public class Application {
         router.delete("/", handler: deleteAllHandler)
         router.delete("/", handler: deleteOneHandler)
         router.patch("/", handler: updateHandler)
-//        router.put("/", handler: updatePutHandler)
+        router.put("/", handler: updatePutHandler)
         
     }
     
@@ -71,6 +73,7 @@ public class Application {
     }
     
     func createHandler(todo: ToDo, completion: @escaping (ToDo?, RequestError?) -> Void ) -> Void {
+        print("entered create handler")
         var todo = todo
         if todo.completed == nil {
             todo.completed = false
@@ -88,6 +91,7 @@ public class Application {
                 print("assigning todo error: \(todo)")
                 return
             }
+            print("assigned todo: \(todo)")
             let insertQuery = Insert(into: todotable, values: [id, title, user, order, completed, url])
             connection.execute(query: insertQuery) { result in
                 if !result.success {
@@ -101,10 +105,12 @@ public class Application {
                 }
             }
         }
+        print("completed create")
         completion(todo, nil)
     }
     
     func getAllHandler(completion: @escaping ([ToDo]?, RequestError?) -> Void ) -> Void {
+        print("entered get all hander")
         var tempToDoStore = [ToDo]()
         connection.connect() { error in
             if error != nil {
@@ -112,14 +118,17 @@ public class Application {
                 return
             }
             else {
+                print("connected")
                 let selectQuery = Select(from :todotable)
                 connection.execute(query: selectQuery) { queryResult in
+                    print("executed query")
                     if let resultSet = queryResult.asResultSet {
                         for row in resultSet.rows {
                             guard let currentToDo = self.rowToDo(row: row) else{
                                 completion(nil, .internalServerError)
                                 return
                             }
+                            print("currentToDo: \(currentToDo)")
                             tempToDoStore.append(currentToDo)
                         }
                     }
@@ -132,6 +141,7 @@ public class Application {
                 }
             }
         }
+        print("completed getAll \(tempToDoStore)")
         completion(tempToDoStore, nil)
     }
     
@@ -316,14 +326,25 @@ public class Application {
     }
     
     private func rowToDo(row: Array<Any?>) -> ToDo? {
+        print("entered rowToDo")
         guard let id = row[0], let id32 = id as? Int32 else{return nil}
         let idInt = Int(id32)
         guard let title = row[1], let titleString = title as? String else {return nil}
         guard let user = row[2], let userString = user as? String else {return nil}
         guard let order = row[3], let orderInt32 = order as? Int32 else {return nil}
         let orderInt = Int(orderInt32)
-        guard let completed = row[4], let completedBool = completed as? Bool else {return nil}
+        guard let completed = row[4] else {return nil}
+        var completedBool = true
+        if let completedInt = completed as? Int8 {
+            if completedInt == 0 {
+                completedBool = false
+            }
+        } else {
+            guard let completed = completed as? Bool else {return nil}
+            completedBool = completed
+        }
         guard let url = row[5], let urlString = url as? String else {return nil}
+        print("finished rowToDo")
         return ToDo(id: idInt, title: titleString, user: userString, order: orderInt, completed: completedBool, url: urlString)
     }
 }
