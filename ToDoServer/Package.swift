@@ -28,16 +28,13 @@ let package = Package(
         .package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", .upToNextMinor(from: "2.0.0")),
         .package(url: "https://github.com/IBM-Swift/Health.git", from: "0.0.0"),
         .package(url: "https://github.com/IBM-Swift/Kitura-CORS", .upToNextMinor(from: "2.0.0")),
-//        .package(url: "https://github.com/IBM-Swift/Swift-Kuery.git", .upToNextMinor(from: "1.0.0")),
-//        .package(url: "https://github.com/IBM-Swift/Swift-Kuery-PostgreSQL.git", .upToNextMinor(from: "1.0.1")),
+        //We have imported both Swift-Kuery-PostgreSQL and SwiftKueryMySQL for easy switching between them
+        .package(url: "https://github.com/IBM-Swift/Swift-Kuery-PostgreSQL.git", .upToNextMinor(from: "1.0.1")),
         .package(url: "https://github.com/IBM-Swift/SwiftKueryMySQL.git", .upToNextMinor(from: "1.0.0")),
-        .package(url: "https://github.com/IBM-Swift/Swift-Kuery.git", .upToNextMinor(from: "0.13.0")),
         ],
     targets: [
-//        .target(name: "ToDoServer", dependencies: [ .target(name: "Application"), "Kitura" , "HeliumLogger", "SwiftKuery", "SwiftKueryPostgreSQL"]),
-//        .target(name: "Application", dependencies: [ "Kitura", "KituraCORS", "CloudEnvironment", "Health" , "SwiftMetrics", "SwiftKuery", "SwiftKueryPostgreSQL"]),
-        .target(name: "ToDoServer", dependencies: [ .target(name: "Application"), "Kitura" , "HeliumLogger", "SwiftKuery", "SwiftKueryMySQL"]),
-        .target(name: "Application", dependencies: [ "Kitura", "KituraCORS", "CloudEnvironment", "Health" , "SwiftMetrics", "SwiftKuery", "SwiftKueryMySQL"]),
+        .target(name: "ToDoServer", dependencies: [ .target(name: "Application"), "Kitura" , "HeliumLogger", "SwiftKueryMySQL", "SwiftKueryPostgreSQL"]),
+        .target(name: "Application", dependencies: [ "Kitura", "KituraCORS", "CloudEnvironment", "Health" , "SwiftMetrics", "SwiftKueryMySQL", "SwiftKueryPostgreSQL"]),
         ]
 )
 

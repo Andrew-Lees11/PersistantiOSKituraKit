@@ -17,7 +17,7 @@
 import Foundation
 import KituraContracts
 import SwiftKuery
-//import SwiftKueryPostgreSQL
+import SwiftKueryPostgreSQL
 import SwiftKueryMySQL
 
 public class ToDoTable : Table {
@@ -35,12 +35,14 @@ public struct ToDo: Codable, Equatable {
     public static func ==(lhs: ToDo, rhs: ToDo) -> Bool {
         return (lhs.title == rhs.title) && (lhs.user == rhs.user) && (lhs.order == rhs.order) && (lhs.completed == rhs.completed) && (lhs.url == rhs.url) && (lhs.id == rhs.id)
     }
+    
     public var id: Int?
     public var title: String?
     public var user: String?
     public var order: Int?
     public var completed: Bool?
     public var url: String?
+    
     public init(title: String?, user: String?, order: Int?, completed: Bool?) {
         self.title = title
         self.user = user
@@ -59,34 +61,4 @@ public struct ToDo: Codable, Equatable {
     }
     
 }
-
-//terminal commands to start mySQL toDoDatabase
-//mysql_upgrade -uroot || echo "No need to upgrade"
-//mysql -uroot -e "CREATE USER 'swift'@'localhost' IDENTIFIED BY 'kuery';"
-//mysql -uroot -e "CREATE DATABASE IF NOT EXISTS ToDoDatabase;"
-//mysql -uroot -e "GRANT ALL ON ToDoDatabase.* TO 'swift'@'localhost';"
-//mysql -uroot
-//use ToDoDatabase
-//CREATE TABLE toDoTable (
-//    toDo_id INT NOT NULL,
-//    toDo_title VARCHAR(50),
-//    toDo_user VARCHAR(50),
-//    toDo_order INT,
-//    toDo_completed BOOLEAN,
-//    toDo_url VARCHAR(50),
-//    PRIMARY KEY ( toDo_id )
-//);
-
-//terminal commands to start postgre toDoDatabase
-//createdb ToDoDatabase
-//psql ToDoDatabase
-//
-//CREATE TABLE toDoTable (
-//    toDo_id integer primary key,
-//    toDo_title varchar(50) NOT NULL,
-//    toDo_user varchar(50) NOT NULL,
-//    toDo_order integer NOT NULL,
-//    toDo_completed boolean NOT NULL,
-//    toDo_url varchar(50) NOT NULL
-//);
 
