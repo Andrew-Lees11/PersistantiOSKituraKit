@@ -61,10 +61,10 @@ func createHandler(todo: ToDo, completion: @escaping (ToDo?, RequestError?) -> V
                 // Something went wrong.
                 print("insert query error: \(queryError)")
                 }
-    completion(nil, .internalServerError)
-    return
+        completion(nil, .internalServerError)
+        return
+        }
     }
-}
 }
 completion(todo, nil)
 }
@@ -81,12 +81,11 @@ This file works with Swift Package Manager, and gets remote repos and projects f
 
 ```swift
 .package(url: "https://github.com/IBM-Swift/SwiftKueryMySQL.git", .upToNextMinor(from: "1.0.0")),
-.package(url: "https://github.com/IBM-Swift/Swift-Kuery.git", .upToNextMinor(from: "0.13.0")),
 ```
 2. They are also added to the targets for `ToDoServer` and `Application`
 ```swift
-.target(name: "ToDoServer", dependencies: [ .target(name: "Application"), "Kitura" , "HeliumLogger", "SwiftKuery", "SwiftKueryMySQL"]),
-.target(name: "Application", dependencies: [ "Kitura", "KituraCORS", "CloudEnvironment", "Health" , "SwiftMetrics", "SwiftKuery", "SwiftKueryMySQL"]),
+.target(name: "ToDoServer", dependencies: [ .target(name: "Application"), "Kitura" , "HeliumLogger", "SwiftKueryMySQL"]),
+.target(name: "Application", dependencies: [ "Kitura", "KituraCORS", "CloudEnvironment", "Health" , "SwiftMetrics", "SwiftKueryMySQL"]),
 ```
 
 ### Models.swift
@@ -136,12 +135,7 @@ CREATE TABLE toDoTable (
     toDo_url varchar(50)
 );
 ```
-
-4. Change Package.swift by uncommenting Swift-Kuery-PostgreSQL and Swift-Kuery and the targets and commenting out SwiftKueryMySQL and Swift-Kuery version 0.13.0 and targets including SwiftKueryMySQL
-
-5. In models uncomment import SwiftKueryPostgreSQL and comment import SwiftKueryMySQL
-
-6. In the Application.swift file, uncomment import SwiftKueryPostgreSQL and comment import SwiftKueryMySQL and change the connection to:
+6. In the Application.swift file,  remove the mySQL connection and replace it with:
 ```swift
 let connection = PostgreSQLConnection(host: "localhost", port: 5432, options: [.databaseName("ToDoDatabase")])
 ```
