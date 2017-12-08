@@ -1,4 +1,4 @@
-<h1 align="center"> Kitura 2 Sample App with Database Persistence - ToDo List </h1>
+<h1 align="center"> Kitura 2 Sample App - ToDo List with Database Persistence </h1>
 
 <p align="center">
 <img src="https://www.ibm.com/cloud-computing/bluemix/sites/default/files/assets/page/catalog-swift.svg" width="120" alt="Kitura Bird">
