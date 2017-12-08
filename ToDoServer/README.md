@@ -1,7 +1,7 @@
 # ToDoServer Component
 
 ### PersistentiOSKituraKit
-The server component from [iOSSampleKituraKit](https://github.com/IBM-Swift/iOSSampleKituraKit/tree/master/ToDoServer) has been adapted to store data in a mySQL database so that, if the server is restarted, the data is stored and will persist.
+The server component from [iOSSampleKituraKit](https://github.com/IBM-Swift/iOSSampleKituraKit/tree/master/ToDoServer) has been adapted to store data in a MySQL database so that, if the server is restarted, the data is stored and will persist.
 
 ### File Structure
 
@@ -9,11 +9,11 @@ The file structure matches what would be automatically generated using `kitura i
 
 #### Sources
 
-This folder contains the running programs files. It is split into /Application and /ToDoServer. The second folder matches the name of the project and is where main.swift is stored. This runs the application, and the /Application folder contains the Classes and Models that are used in the running application.
+This folder contains the running programs files. It is split into /Application and /ToDoServer. The second folder matches the name of the project and is where `main.swift` is stored. This runs the application, and the /Application folder contains the Classes and Models that are used in the running application.
 
 ### Application.swift
 
-This is where the majority of logic regarding the server lives. It defines routes available for the server, starts the server using `Kitura.run()` and also sets up handlers for a manner **RESTful requests**. The context of the request is inferred by a combination of the type of request (post, put, patch, delete or get) and the parameters given. The majority of the file is the handlers, there is also some environment setup at the start of the file for SwiftMetrics and Health. If you choose to include SwiftMetrics, navigating to https://localhost:8080/swiftmetrics-dash will show the servers activity as a live Dashboard.
+This is where the majority of logic regarding the server lives. It defines routes available for the server, starts the server using `Kitura.run()` and sets up handlers to determine how the server reacts when it receives a **RESTful request**. The context of the request is inferred by a combination of the type of request (post, put, patch, delete or get) and the parameters given. There is also some environment setup at the start of the file for SwiftMetrics and Health. If you choose to include SwiftMetrics, navigating to https://localhost:8080/swiftmetrics-dash will show the servers activity as a live Dashboard.
 
 #### PersistentiOSKituraKit Additions
 
@@ -33,8 +33,9 @@ let connection = MySQLConnection(user: "swift", password: "kuery", database: "To
 
 4. Handlers for server routes are changed to send and recieve data from the database.
 
-Every HTTP request recieved from the server is given a corresponding SQL query.  
-For example the `createHandler` responds to an HTTP `POST` request from the application. The server will now perform an SQL insert with the received data to store this in the database:
+Every HTTP request received from the server is given a corresponding SQL query.
+
+For example the `createHandler` responds to an HTTP `POST` request from the application. The server will now perform an SQL `INSERT` with the received data to store this in the database:
 ```swift
 func createHandler(todo: ToDo, completion: @escaping (ToDo?, RequestError?) -> Void ) -> Void {
     var todo = todo
@@ -77,12 +78,12 @@ This file works with Swift Package Manager, and gets remote repos and projects f
 
 #### PersistentiOSKituraKit Additions
 
-1. To use MySQL, `SwiftKueryMySQL` and `Swift-Kuery` have been added to the list of packages
+1. To use MySQL, `SwiftKueryMySQL` has been added to the list of packages
 
 ```swift
 .package(url: "https://github.com/IBM-Swift/SwiftKueryMySQL.git", .upToNextMinor(from: "1.0.0")),
 ```
-2. They are also added to the targets for `ToDoServer` and `Application`
+2.  `SwiftKueryMySQL` is also added to the targets for `ToDoServer` and `Application`
 ```swift
 .target(name: "ToDoServer", dependencies: [ .target(name: "Application"), "Kitura" , "HeliumLogger", "SwiftKueryMySQL"]),
 .target(name: "Application", dependencies: [ "Kitura", "KituraCORS", "CloudEnvironment", "Health" , "SwiftMetrics", "SwiftKueryMySQL"]),
@@ -90,7 +91,7 @@ This file works with Swift Package Manager, and gets remote repos and projects f
 
 ### Models.swift
 
-Inside Models a class, matching the database table, is created.
+Inside `Models.swift`, a class matching the database table, is created.
 
 ```
 public class ToDoTable : Table {
@@ -106,14 +107,14 @@ public class ToDoTable : Table {
 
 ### Main.swift
 
-This simple file starts logging with HeliumLogger, and then creates an instance of the Application object before calling its run method. The running never halts as the server is always waiting for new connections and requests. Therefore any terminal window it runs in will be unable to repsond to new inputs, so opening a new window is needed for new commands. 
+This simple file starts logging with HeliumLogger, and then creates an instance of the Application object before calling its run method. The running never halts as the server is always waiting for new connections and requests. Therefore any terminal window it runs in will be unable to respond to new inputs, so opening a new window is needed for new commands.
 
 **HINT:** To cancel a running process in a terminal window, press CTRL + C.
 
 ### Switching to PostgreSQL
-This project used a mySQL database to store the data from the server. Since [Swift-Kuery-MySQL](https://github.com/IBM-Swift/SwiftKueryMySQL) is build apon the [Swift Kuery](https://github.com/IBM-Swift/Swift-Kuery) abstraction layer you can quite easily switch between mySQL and other supported SQL databases. 
+This project used a MySQL database to store the data from the server. Since [Swift-Kuery-MySQL](https://github.com/IBM-Swift/SwiftKueryMySQL) is build upon the [Swift Kuery](https://github.com/IBM-Swift/Swift-Kuery) abstraction layer, you can easily switch between mySQL and other supported SQL databases, such a PostgreSQL.
 
-1. Start the postgreSQL database"
+1. Start the PostgreSQL database:
 
 `brew install postgresql`
 `brew services start postgresql`
@@ -135,16 +136,16 @@ CREATE TABLE toDoTable (
     toDo_url varchar(50)
 );
 ```
-6. In the Application.swift file,  remove the mySQL connection and replace it with:
+4. In the Application.swift file,  remove the mySQL connection and replace it with:
 ```swift
 let connection = PostgreSQLConnection(host: "localhost", port: 5432, options: [.databaseName("ToDoDatabase")])
 ```
 
-Now when you run the server it will connect to your postgreSQL database.
+Now, when you run the server, it will connect to your PostgreSQL database instead of the MySQL database.
 
 ### Metrics.swift, InitializationError.swift, and Routes/HealthRoutes.swift
 
-These files provide logging and metrics for the running application. Health provied a succinct UP message in the browser window as JSON if a user navigates to http://localhost:8080/health. 
+These files provide logging and metrics for the running application. Health provides a succinct UP message in the browser window as JSON if a user navigates to http://localhost:8080/health.
 
 ### Further Reading and Resources
 
