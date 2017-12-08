@@ -1,4 +1,4 @@
-<h1 align="center"> Kitura 2 Sample App - ToDo List </h1>
+<h1 align="center"> Kitura 2 Sample App with Database Persistence - ToDo List </h1>
 
 <p align="center">
 <img src="https://www.ibm.com/cloud-computing/bluemix/sites/default/files/assets/page/catalog-swift.svg" width="120" alt="Kitura Bird">
@@ -16,7 +16,7 @@
 
 [Kituta is a lightweight and simple web framework](http://kitura.io) that makes it easy to set up complex web routes for web services and applications. 
 
-PersistentiOSKituraKit provides an example of the todo list application [iOSSampleKituraKit](https://github.com/IBM-Swift/iOSSampleKituraKit) which has been connected to a MySQL database. This means that, if the server is restarted, the data will persist inside the database. The server handles all communcation the database, so for technical details and example code on how  persistence has been added, view the [ToDoServer README](https://github.com/Andrew-Lees11/PersistentiOSKituraKit/tree/master/ToDoServer) .
+PersistentiOSKituraKit provides an example of the todo list application [iOSSampleKituraKit](https://github.com/IBM-Swift/iOSSampleKituraKit), which has been connected to a MySQL database. This means that, if the server is restarted, the data will persist inside the database. The server handles all communcation the database, so for technical details and example code on how  persistence has been added, view the [ToDoServer README](https://github.com/Andrew-Lees11/PersistentiOSKituraKit/tree/master/ToDoServer) .
 
 ### Quick Start*
 1. Install MySQL
