@@ -145,7 +145,7 @@ Now, when you run the server, it will connect to your PostgreSQL database instea
 
 ### Metrics.swift, InitializationError.swift, and Routes/HealthRoutes.swift
 
-These files provide logging and metrics for the running application. Health provides a succinct UP message in the browser window as JSON if a user navigates to http://localhost:8080/health.
+These files provide logging and metrics for the running application. Health provides a JSON availability message when a user navigates to http://localhost:8080/health.
 
 ### Further Reading and Resources
 
