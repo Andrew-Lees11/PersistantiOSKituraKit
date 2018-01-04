@@ -34,7 +34,7 @@ let package = Package(
         ],
     targets: [
         .target(name: "ToDoServer", dependencies: [ .target(name: "Application"), "Kitura" , "HeliumLogger", "SwiftKueryMySQL", "SwiftKueryPostgreSQL"]),
-        .target(name: "Application", dependencies: [ "Kitura", "KituraCORS", "CloudEnvironment", "Health" , "SwiftMetrics", "SwiftKueryMySQL", "SwiftKueryPostgreSQL"]),
+        .target(name: "Application", dependencies: [ "Kitura", "KituraCORS", "CloudEnvironment", "Health", "SwiftMetrics"]),
         ]
 )
 

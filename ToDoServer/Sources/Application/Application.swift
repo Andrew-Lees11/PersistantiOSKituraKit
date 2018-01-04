@@ -110,19 +110,17 @@ public class Application {
                     completion(nil, .internalServerError)
                     return
                 }
+                // If there were no errors, the todo has been successfully inserted into the database
+                // and we return the todo object to indicate success
+                completion(todo, nil)
             }
         }
-        // If there were no errors, the todo has been successfully inserted into the database
-        // and we return the todo object to indicate success
-        completion(todo, nil)
     }
     
     /**
-     The getAllHandler function tells the server how to handle an HTTP GET request when you receive no parameters. It creates a temporary ToDoStore array, connects to the database, executes a SQL select query to get the todotable from the database and then fills the ToDoStore with all the ToDos. If it has been successful, this function returns this array of ToDos with the requestError being nil. If there has been an error it will return the RequestError and nil for the ToDo array.
+     The getAllHandler function tells the server how to handle an HTTP GET request when you receive no parameters. It connects to the database, executes a SQL select query to get the todotable from the database and then fills a temporary ToDoStore with all the ToDos. If it has been successful, this function returns this array of ToDos with the requestError being nil. If there has been an error it will return the RequestError and nil for the ToDo array.
      */
     func getAllHandler(completion: @escaping ([ToDo]?, RequestError?) -> Void ) -> Void {
-        // Create a local array of ToDo objects.
-        var tempToDoStore = [ToDo]()
         // Connect to the database. If this fails return an internalServerError.
         connection.connect() { error in
             if error != nil {
@@ -137,6 +135,8 @@ public class Application {
                 connection.execute(query: selectQuery) { queryResult in
                     // If the queryResult is a result set, iterate through the returned rows.
                     if let resultSet = queryResult.asResultSet {
+                        // Create a local array of ToDo objects.
+                        var tempToDoStore = [ToDo]()
                         for row in resultSet.rows {
                             // The rowToDo function parses a row from the database and returns either a ToDo object or nil is the parsing fails.
                             guard let currentToDo = self.rowToDo(row: row) else{
@@ -146,6 +146,8 @@ public class Application {
                             // Add the ToDo object to you ToDoStore.
                             tempToDoStore.append(currentToDo)
                         }
+                        // If there were no errors, return the ToDoStore containing all the ToDos from the database.
+                        completion(tempToDoStore, nil)
                     }
                     else if let queryError = queryResult.asError {
                         // If the queryResult is an error return .internalServerError
@@ -156,8 +158,6 @@ public class Application {
                 }
             }
         }
-        // If there were no errors, return the ToDoStore containing all the ToDos from the database.
-        completion(tempToDoStore, nil)
     }
     
     /**
@@ -220,12 +220,11 @@ public class Application {
                         completion(.internalServerError)
                         return
                     }
+                    // If there were no errors, return nil.
+                    completion(nil)
                 }
-
             }
         }
-        // If there were no errors, return nil.
-        completion(nil)
     }
     
     /**
@@ -248,12 +247,12 @@ public class Application {
                         completion(.internalServerError)
                         return
                     }
+                    // If there were no errors, return nil.
+                    completion(nil)
                 }
                 
             }
         }
-        // If there were no errors, return nil.
-        completion(nil)
     }
     
     /**
